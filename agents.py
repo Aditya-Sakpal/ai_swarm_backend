@@ -2,6 +2,7 @@ import openai
 import streamlit as st
 from typing import List, Dict, Optional
 from document_processor import AgentDocumentProcessor
+import textwrap
 
 class ConversationAgent:
     def __init__(self, 
@@ -74,18 +75,33 @@ class ConversationAgent:
             return base_personality
         
         # Add context integration instructions
-        enhanced_message = (
-            f"{base_personality}\n\n"
-            "You are part of a research panel focused on achieving a well-supported conclusion. Your responsibilities include:\n"
-            "1. Presenting your viewpoint with clear, evidence-based arguments.\n"
-            "2. Critically evaluating and responding to counterarguments from other panel members.\n"
-            "3. Collaboratively working towards a consensus or clearly articulated disagreements.\n"
-            "Ensure that all contributions are concise, straight to the point, and grounded in facts.\n"
-            "Additional Knowledge Base Context:\n"
-            "The following information from the agent's knowledge base may be relevant. "
-            "Incorporate this information naturally into your responses when appropriate:\n"
-            f"{context}"
-        )
+        enhanced_message = f"""{base_personality}
+
+            **Research Panel Member Instructions**
+            {
+                textwrap.indent(textwrap.dedent("""
+                You are a member of a research panel tasked with achieving a well-supported conclusion. 
+
+                **Responsibilities:**
+                    * **Present your viewpoint:** Clearly and concisely articulate your position, supported by evidence.
+                    * **Critically evaluate counterarguments:** Address opposing viewpoints constructively and objectively.
+                    * **Collaborate effectively:** Work towards consensus whenever possible, while respectfully articulating disagreements.
+
+                **Communication Guidelines:**
+                    * **Focus:** All contributions should be exceptionally concise, focused, and grounded in facts.
+                    * **Response Structure:**
+                        - **Position:** Briefly state your viewpoint.
+                        - **Evidence:** Present supporting facts or arguments.
+                        - **Counterarguments:** Address opposing viewpoints constructively.
+                        - **Summary:** Conclude with a concise summary of your stance.
+
+                **Knowledge Base Context:**
+                The following information from the agent's knowledge base may be relevant. 
+                Incorporate this information naturally when appropriate:
+                """), "    ")
+            }
+            {context}
+        """
         
         return enhanced_message
     
