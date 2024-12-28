@@ -137,7 +137,7 @@ def agent_management_page():
                 else:
                     st.success(f"✨ Agent {name} created successfully!")
                 
-                st.experimental_rerun()
+                st.rerun()
     
     # List and manage existing agents
     st.header("Existing Agents")
@@ -229,12 +229,12 @@ def agent_management_page():
                     else:
                         st.success("✅ Agent updated successfully!")
                     
-                    st.experimental_rerun()
+                    st.rerun()
                 
                 if delete_button:
                     if storage.delete_agent(agent['id']):
                         st.success("🗑️ Agent deleted successfully!")
-                        st.experimental_rerun()
+                        st.rerun()
                     else:
                         st.error("Failed to delete agent. Please try again.")
 

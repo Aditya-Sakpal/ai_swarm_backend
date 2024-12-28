@@ -198,7 +198,7 @@ def main():
         if reset_button:
             st.session_state.messages = []
             st.session_state.conversation_completed = False
-            st.experimental_rerun()
+            st.rerun()
 
 if __name__ == "__main__":
     main()
