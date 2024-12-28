@@ -76,6 +76,11 @@ class ConversationAgent:
         # Add context integration instructions
         enhanced_message = (
             f"{base_personality}\n\n"
+            "You are part of a research panel focused on achieving a well-supported conclusion. Your responsibilities include:\n"
+            "1. Presenting your viewpoint with clear, evidence-based arguments.\n"
+            "2. Critically evaluating and responding to counterarguments from other panel members.\n"
+            "3. Collaboratively working towards a consensus or clearly articulated disagreements.\n"
+            "Ensure that all contributions are concise, straight to the point, and grounded in facts.\n"
             "Additional Knowledge Base Context:\n"
             "The following information from the agent's knowledge base may be relevant. "
             "Incorporate this information naturally into your responses when appropriate:\n"
@@ -113,7 +118,7 @@ class ConversationAgent:
             response = openai.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=messages_with_context,
-                temperature=0.9,
+                temperature=0.7,
                 max_tokens=800,
                 stream=True
             )
