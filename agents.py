@@ -1,7 +1,9 @@
 import openai
 import streamlit as st
+import traceback
 from typing import List, Dict, Optional
 from document_processor import AgentDocumentProcessor
+from redis_client import redis_client
 
 class ConversationAgent:
     def __init__(self, 
@@ -83,45 +85,79 @@ class ConversationAgent:
         )
         
         return enhanced_message
-    
-    def get_response(self, messages: List[Dict[str, str]]) -> Optional[openai.ChatCompletion]:
+
+    def store_message_in_cache(self, conversation_id: str, message: Dict[str, str]):
         """
-        Generate a response incorporating knowledge base context when relevant.
+        Store the message in the cache.
         
         Args:
+            conversation_id (str): The conversation id.
+            message (Dict[str, str]): The message.
+            
+        Returns:
+            None
+        """
+        redis_key = f"conversation:{conversation_id}:messages"
+        print(message)
+        redis_client.rpush(redis_key, message)
+        redis_client.ltrim(redis_key, -3, -1)
+        
+    def get_cached_messages(self, conversation_id: str) -> List[Dict[str, str]]:
+        """
+        Retrieve the last three messages from Redis for the given conversation ID.
+        """
+        redis_key = f"conversation:{conversation_id}:messages"
+        cached_messages = redis_client.lrange(redis_key, 0, -1)
+        print(cached_messages)
+        return [eval(msg) for msg in cached_messages] 
+    
+    def get_response(self, messages: List[Dict[str, str]], conversation_id: str) -> Optional[openai.ChatCompletion]:
+        """
+        Generate a response incorporating knowledge base context when relevant.
+
+        Args:
             messages (List[Dict[str, str]]): Conversation history
+            conversation_id (str): Unique conversation identifier
             
         Returns:
             Optional[openai.ChatCompletion]: Streamed response or None if error occurs
         """
         try:
+            # Store the last message in the Redis cache
+            if messages:
+                for message in messages:
+                    self.store_message_in_cache(conversation_id, message)
+
+            # Retrieve cached messages
+            cached_messages = self.get_cached_messages(conversation_id)
+
             # Get context for the last message if available
             context = ""
-            if messages:
-                last_message = messages[-1]["content"]
+            if cached_messages:
+                last_message = cached_messages[-1]["content"]
                 context = self.get_relevant_context(last_message)
-            
+
             # Enhance system message with context
             system_message = self.enhance_system_message(self.personality, context)
-            
+
             # Create messages with enhanced context
-            messages_with_context = [
-                {"role": "system", "content": system_message}
-            ] + messages
+            messages_with_context = [{"role": "system", "content": system_message}] + cached_messages
             
+            print(messages_with_context)
+
             # Generate response
-            response = openai.chat.completions.create(
+            response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=messages_with_context,
                 temperature=0.9,
                 max_tokens=800,
                 stream=True
             )
-            
+
             return response
-            
+
         except Exception as e:
-            st.error(f"Error getting response: {str(e)}")
+            print(f"Error generating response: {traceback.format_exc()}")
             return None
     
     def add_document_to_knowledge_base(self, document) -> tuple[bool, str]:

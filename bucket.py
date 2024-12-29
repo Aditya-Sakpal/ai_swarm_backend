@@ -1,6 +1,7 @@
 import streamlit as st
 import openai
 import time
+import uuid
 from datetime import datetime
 import os
 import dotenv
@@ -172,7 +173,7 @@ def main():
         if start_button:
             st.session_state.messages = []
             st.session_state.conversation_completed = False
-            
+            conversation_id = str(uuid.uuid4())
             for turn in range(max_turns):
                 # Determine current agent
                 current_agent = agent1 if turn % 2 == 0 else agent2
@@ -194,7 +195,7 @@ def main():
                         messages_with_context = st.session_state.messages
                     
                     # Stream the response
-                    for chunk in current_agent.get_response(messages_with_context):
+                    for chunk in current_agent.get_response(messages_with_context,conversation_id):
                         if hasattr(chunk.choices[0].delta, 'content'):
                             content = chunk.choices[0].delta.content
                             if content is not None:
@@ -224,7 +225,7 @@ def main():
         if reset_button:
             st.session_state.messages = []
             st.session_state.conversation_completed = False
-            st.experimental_rerun()
+            st.rerun()
 
 if __name__ == "__main__":
     main()
