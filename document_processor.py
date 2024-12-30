@@ -9,16 +9,7 @@ import tempfile
 
 class AgentDocumentProcessor:
     def __init__(self, agent_id: str, openai_api_key: str):
-        """
-            This constructor initializes the agent document processor.
-            
-            Args :
-                agent_id (str) : The id of the agent.
-                openai_api_key (str) : The OpenAI API key.
-                
-            Returns :
-                None
-        """
+        """Initialize document processor for a specific agent."""
         self.agent_id = agent_id
         self.openai_api_key = openai_api_key
         
@@ -42,15 +33,7 @@ class AgentDocumentProcessor:
         )
 
     def process_file(self, uploaded_file) -> Dict[str, List[str]]:
-        """
-            This function processes an uploaded file.
-            
-            Args :
-                uploaded_file : The uploaded file.
-                
-            Returns :
-                Dict[str, List[str]] : The processed file details.
-        """
+        """Process an uploaded file (PDF or TXT)."""
         with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file.name)[1]) as tmp_file:
             tmp_file.write(uploaded_file.getvalue())
             file_path = tmp_file.name
@@ -92,15 +75,7 @@ class AgentDocumentProcessor:
             raise e
 
     def _extract_text_from_pdf(self, file_path: str) -> str:
-        """
-            This function extracts text from a PDF file.
-            
-            Args :
-                file_path (str) : The path to the PDF file.
-                
-            Returns :
-                str : The extracted text.
-        """
+        """Extract text from PDF file."""
         with open(file_path, 'rb') as file:
             pdf_reader = PyPDF2.PdfReader(file)
             text = ""
@@ -109,15 +84,7 @@ class AgentDocumentProcessor:
             return text
 
     def add_document(self, uploaded_file):
-        """
-            This function adds a document to the agent's knowledge base.
-            
-            Args :
-                uploaded_file : The uploaded file.
-                
-            Returns :
-                Tuple[bool, str] : The result of the operation
-        """
+        """Process and add a document to the agent's knowledge base."""
         try:
             doc_data = self.process_file(uploaded_file)
             
@@ -138,16 +105,7 @@ class AgentDocumentProcessor:
             return False, f"Error processing {uploaded_file.name}: {str(e)}"
 
     def get_relevant_context(self, query: str, k: int = 3) -> List[str]:
-        """
-            This function gets the relevant context for a query.
-            
-            Args :
-                query (str) : The query.
-                k (int) : The number of results to return.
-                
-            Returns :
-                List[str] : The relevant context.
-        """
+        """Retrieve relevant context from the agent's knowledge base."""
         query_embedding = self.embeddings.embed_query(query)
         results = self.collection.query(
             query_embeddings=[query_embedding],
