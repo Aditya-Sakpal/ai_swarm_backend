@@ -54,11 +54,11 @@ def generate_summary_doc(messages, goal):
         st.error(f"Error generating summary: {str(e)}")
         return None
 
-def create_formatted_docx(summary, goal, messages):
+def create_formatted_docx(summary, goal, messages, agent1_name, agent2_name):
     try:
         doc = Document()
 
-        header = doc.add_heading('Web3 x Regenerative Future Dialogue', 0)
+        header = doc.add_heading(f"{agent1_name} X {agent2_name} Conversation", 0)
         header.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
         doc.add_paragraph()
@@ -82,12 +82,12 @@ def create_formatted_docx(summary, goal, messages):
                 format_text(para, line)
 
         doc.add_heading('Full Dialogue', level=1)
-        for msg in messages:
+        for i, msg in enumerate(messages):
             p = doc.add_paragraph()
-            if msg["role"] == "user":
-                speaker_run = p.add_run("🌱 GreenPillAI: ")
+            if i % 2 == 0: 
+                speaker_run = p.add_run(f"{agent1_name}: \n")
             else:
-                speaker_run = p.add_run("👨‍💻 Kevin: ")
+                speaker_run = p.add_run(f"{agent2_name}: \n")
             speaker_run.bold = True
 
             message_content = msg["content"]

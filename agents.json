@@ -65,7 +65,7 @@
   },
   {
     "name": "Hydrogen vehicle expert",
-    "role": "user",
+    "role": "assistant",
     "avatar": "\ud83d\ude99",
     "expertise": [
       "Hydrogen fueled vehicles",
