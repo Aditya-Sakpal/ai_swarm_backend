@@ -1,5 +1,4 @@
 from docx import Document
-from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 import io
 import re
@@ -18,34 +17,35 @@ def generate_summary_doc(messages, goal):
     """
     summary_prompt = {
         "role": "system",
-        "content": """Create a concise but comprehensive Web3 x Regenerative Future summary. Keep each section focused and specific:
-        
-        # Executive Summary
-        [One paragraph overview of key innovations]
-        
-        # Technical Innovations
-        - Core mechanisms proposed
-        - Novel combinations discovered
-        - Technical challenges addressed
-        
-        # Implementation Framework
-        - Key milestones
-        - Technical requirements
-        - Resource needs
-        
-        # Impact Metrics
-        - Environmental KPIs
-        - Social impact measures
-        - Economic sustainability indicators
-        
-        Keep all content specific and actionable. Avoid generic statements."""
+        "content": f"""Summarize the entire conversation, focusing on the following:
+
+    * **Executive Summary:** 
+        - Briefly describe the main topic and purpose of the conversation. 
+        - Summarize the key outcomes and decisions reached.
+
+    * **Key Findings & Insights:** 
+        - Highlight the most important information, conclusions, and agreements made during the discussion. 
+        - Include any valuable insights or new perspectives gained.
+
+    * **Action Items:** 
+        - List any specific actions, decisions, or next steps that need to be taken. 
+        - Include who is responsible for each action and any associated deadlines.
+
+    Keep the summary concise, objective, and easy to understand. Avoid generic statements and focus on the most relevant and actionable information.
+
+    **Goal of Conversation:**
+    {goal}
+
+    **Conversation:**
+    """
     }
+
     
     try:
         response = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[summary_prompt] + messages,
-            temperature=0.7,
+            temperature=0.6,
             max_tokens=1000,
             stream=False
         )
@@ -57,27 +57,29 @@ def generate_summary_doc(messages, goal):
 def create_formatted_docx(summary, goal, messages):
     try:
         doc = Document()
-        
+
         header = doc.add_heading('Web3 x Regenerative Future Dialogue', 0)
         header.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        
+
         doc.add_paragraph()
+
         goal_para = doc.add_paragraph()
         goal_run = goal_para.add_run('Innovation Goal: ')
         goal_run.bold = True
         goal_para.add_run(goal)
-        
+
         doc.add_paragraph()
-        
-        sections = summary.split('#')
-        for section in sections[1:]:
-            lines = section.strip().split('\n')
-            if lines:
-                doc.add_heading(lines[0].strip(), level=1)
-                content = '\n'.join(lines[1:]).strip()
-                if content:
-                    para = doc.add_paragraph()
-                    format_text(para, content)
+
+        lines = summary.split('\n')
+        for line in lines:
+            line = line.strip()
+            if line.startswith('#'):
+                heading_level = min(line.count('#'), 4)
+                heading_text = line.lstrip('#').strip()
+                doc.add_heading(heading_text, level=heading_level)
+            elif line:
+                para = doc.add_paragraph()
+                format_text(para, line)
 
         doc.add_heading('Full Dialogue', level=1)
         for msg in messages:
@@ -99,7 +101,7 @@ def create_formatted_docx(summary, goal, messages):
         return doc_io
 
     except Exception as e:
-        st.error(f"Error creating document: {str(e)}")
+        print(f"Error creating document: {str(e)}")
         return None
 
 def format_text(paragraph, content):
