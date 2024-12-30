@@ -23,7 +23,7 @@ def display_agent_info(agent_data):
         ', '.join(agent_data.get('expertise', ['AI Conversation']))
     ))
 
-def generate_document(messages, goal):
+def generate_document(messages, goal, agent1_name, agent2_name):
     """Generate and offer document download"""
     st.success("💫 Conversation completed! Generating detailed summary...")
     
@@ -31,7 +31,7 @@ def generate_document(messages, goal):
         summary = generate_summary_doc(messages, goal)
         if summary:
             # Create and save document
-            doc_io = create_formatted_docx(summary, goal, messages)
+            doc_io = create_formatted_docx(summary, goal, messages, agent1_name, agent2_name)
             
             if doc_io:
                 st.success("✅ Document generated successfully!")
@@ -160,8 +160,8 @@ def main():
                     # Initialize conversation with the goal if it's the first message
                     if len(st.session_state.messages) == 0:
                         conversation_starter = (
-                            f"Let's explore this goal: {goal}. I'll start by "
-                            "analyzing the key mechanisms and potential innovations we could implement."
+                            f"""Let's delve into this topic: {goal}.
+                            To begin, let's explore the core principles, challenges, and potential strategies or innovations that could be applied."""
                         )
                         messages_with_context = [{"role": "user", "content": conversation_starter}]
                     else:
@@ -189,11 +189,13 @@ def main():
             # Mark conversation as completed after all turns
             st.session_state.conversation_completed = True
             # Generate document after conversation completion
-            generate_document(st.session_state.messages, goal)
+            agent1_doc_name = agent1_data['avatar'] + " " + agent1_data['name']
+            agent2_doc_name = agent2_data['avatar'] + " " + agent2_data['name']
+            generate_document(st.session_state.messages, goal, agent1_doc_name, agent2_doc_name)
         
         # Handle manual generation
         if 'generate_button' in locals() and generate_button:
-            generate_document(st.session_state.messages, goal)
+            generate_document(st.session_state.messages, goal, agent1_doc_name, agent2_doc_name)
         
         if reset_button:
             st.session_state.messages = []
