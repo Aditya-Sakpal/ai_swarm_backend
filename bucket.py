@@ -1,7 +1,6 @@
 import streamlit as st
 import openai
 import time
-import uuid
 from datetime import datetime
 import os
 import dotenv
@@ -14,15 +13,7 @@ dotenv.load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def display_agent_info(agent_data):
-    """
-        This function displays the agent information.
-        
-        Args :
-            agent_data (dict) : The agent data.
-            
-        Returns :
-            None
-    """
+    """Display agent information in a formatted way"""
     st.markdown(f"### **{agent_data['name']}** {agent_data['avatar']}")
     st.markdown("""
     - Role: {}
@@ -33,16 +24,7 @@ def display_agent_info(agent_data):
     ))
 
 def generate_document(messages, goal, agent1_name, agent2_name):
-    """
-        This function generates a detailed summary document.
-        
-        Args :
-            messages (list) : The conversation messages.
-            goal (str) : The conversation goal.
-            
-        Returns :
-            None
-    """
+    """Generate and offer document download"""
     st.success("💫 Conversation completed! Generating detailed summary...")
     
     with st.spinner("Generating summary document..."):
@@ -67,15 +49,6 @@ def generate_document(messages, goal, agent1_name, agent2_name):
                 st.error("Failed to generate document. Please try again.")
 
 def main():
-    """
-        This function contains the main application logic.
-        
-        Args :
-            None
-            
-        Returns :
-            None
-    """
     st.title("🌱 Web3 x Regenerative Future Bucket")
     
     # Initialize storage and get available agents
@@ -173,7 +146,7 @@ def main():
         if start_button:
             st.session_state.messages = []
             st.session_state.conversation_completed = False
-            conversation_id = str(uuid.uuid4())
+            
             for turn in range(max_turns):
                 # Determine current agent
                 current_agent = agent1 if turn % 2 == 0 else agent2
@@ -195,7 +168,7 @@ def main():
                         messages_with_context = st.session_state.messages
                     
                     # Stream the response
-                    for chunk in current_agent.get_response(messages_with_context,conversation_id):
+                    for chunk in current_agent.get_response(messages_with_context):
                         if hasattr(chunk.choices[0].delta, 'content'):
                             content = chunk.choices[0].delta.content
                             if content is not None:
