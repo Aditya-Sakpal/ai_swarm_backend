@@ -2,6 +2,7 @@ import openai
 import streamlit as st
 from typing import List, Dict, Optional
 from document_processor import AgentDocumentProcessor
+import textwrap
 
 class ConversationAgent:
     def __init__(self, 
@@ -74,13 +75,33 @@ class ConversationAgent:
             return base_personality
         
         # Add context integration instructions
-        enhanced_message = (
-            f"{base_personality}\n\n"
-            "Additional Knowledge Base Context:\n"
-            "The following information from the agent's knowledge base may be relevant. "
-            "Incorporate this information naturally into your responses when appropriate:\n"
-            f"{context}"
-        )
+        enhanced_message = f"""{base_personality}
+
+            **Research Panel Member Instructions**
+            {
+                textwrap.indent(textwrap.dedent("""
+                You are a member of a research panel tasked with achieving a well-supported conclusion. 
+
+                **Responsibilities:**
+                    * **Present your viewpoint:** Clearly and concisely articulate your position, supported by evidence.
+                    * **Critically evaluate counterarguments:** Address opposing viewpoints constructively and objectively.
+                    * **Collaborate effectively:** Work towards consensus whenever possible, while respectfully articulating disagreements.
+
+                **Communication Guidelines:**
+                    * **Focus:** All contributions should be exceptionally concise, focused, and grounded in facts.
+                    * **Response Structure:**
+                        - **Position:** Briefly state your viewpoint.
+                        - **Evidence:** Present supporting facts or arguments.
+                        - **Counterarguments:** Address opposing viewpoints constructively.
+                        - **Summary:** Conclude with a concise summary of your stance.
+
+                **Knowledge Base Context:**
+                The following information from the agent's knowledge base may be relevant. 
+                Incorporate this information naturally when appropriate:
+                """), "    ")
+            }
+            {context}
+        """
         
         return enhanced_message
     
@@ -113,7 +134,7 @@ class ConversationAgent:
             response = openai.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=messages_with_context,
-                temperature=0.9,
+                temperature=0.7,
                 max_tokens=800,
                 stream=True
             )

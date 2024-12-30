@@ -25,4 +25,3 @@ tqdm
 
 # File Handling
 typing-extensions
-io
