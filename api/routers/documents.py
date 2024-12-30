@@ -1,14 +1,10 @@
-from fastapi import APIRouter, HTTPException
-
+from fastapi import APIRouter, HTTPException , UploadFile, File 
+import tempfile
+import traceback
 from core.document_generator import DocumentGenerator
 from core.document_processor import DocumentProcessor
 from api.models import (  
     GenerateSummaryRequest,
-    CreateDocumentRequest,
-    ProcessDocumentRequest,
-    ExtractTextFromPDFRequest,
-    AddDocumentRequest,
-    GetRelevantContextRequest,
 )
 
 document_generator = DocumentGenerator()
@@ -31,43 +27,30 @@ async def generate_summary(request: GenerateSummaryRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/create_document")
-async def create_document(request: CreateDocumentRequest):
-    """
-        This api endpoint is used to create a document from the conversation.
-        
-        Args :
-            request (CreateDocumentRequest) : The request details.
-            
-        Returns :
-            bytes : The generated document.
-    """
-    try:
-        doc_io = document_generator.create_document(request.summary, request.goal, request.messages)
-        return doc_io
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
 @router.post("/process_document/{agent_id}")
-async def process_document(agent_id: str, request: ProcessDocumentRequest):
+async def process_document(agent_id: str,file: UploadFile = File(...)):
     """
         This api endpoint is used to process a document.
         
         Args :
             agent_id (str) : The id of the agent.
-            request (ProcessDocumentRequest) : The request details.
-            
+            file (UploadFile) : The document file.            
         Returns :
             Dict : The processed document details.
     """
     try:
+        if not file:
+            raise HTTPException(status_code=400, detail="No file uploaded")
+        
         document_processor = DocumentProcessor(agent_id)
-        return document_processor.process_document(request.content, request.filename)
+        content = await file.read()
+        return document_processor.process_document(content, file.filename)
     except Exception as e:
+        print(traceback.format_exc())
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/extract_text_from_pdf/{agent_id}")
-async def extract_text_from_pdf(agent_id: str, request: ExtractTextFromPDFRequest):
+async def extract_text_from_pdf(agent_id: str, file: UploadFile = File(...)):
     """
         This api endpoint is used to extract text from a pdf.
         
@@ -79,13 +62,22 @@ async def extract_text_from_pdf(agent_id: str, request: ExtractTextFromPDFReques
             str : The extracted text.
     """
     try:
+        if not file or not file.filename.lower().endswith('.pdf'):
+            raise HTTPException(status_code=400, detail="Uploaded file must be a PDF")
+        
+        content = await file.read()
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+            tmp_file.write(content)
+            file_path = tmp_file.name
+            
         document_processor = DocumentProcessor(agent_id)
-        return document_processor._extract_text_from_pdf(request.file_path)
+        return document_processor._extract_text_from_pdf(file_path)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/add_document/{agent_id}")
-async def add_document(agent_id: str, request: AddDocumentRequest):
+async def add_document(agent_id: str, file: UploadFile = File(...)):
     """
         This api endpoint is used to add a document to the agent's knowledge base.
         
@@ -97,25 +89,11 @@ async def add_document(agent_id: str, request: AddDocumentRequest):
             Tuple[bool, str] : The result of the operation.
     """
     try:
-        document_processor = DocumentProcessor(agent_id)
-        return document_processor.add_document(request.content, request.filename)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@router.post("/get_relevant_context/{agent_id}")
-async def get_relevant_context(agent_id: str, request: GetRelevantContextRequest):
-    """
-        This api endpoint is used to get the relevant context for a query.
+        if not file:
+            raise HTTPException(status_code=400, detail="No file uploaded")
         
-        Args :
-            agent_id (str) : The id of the agent.
-            request (GetRelevantContextRequest) : The request details.
-            
-        Returns :
-            List[str] : The relevant context.
-    """
-    try:
         document_processor = DocumentProcessor(agent_id)
-        return document_processor.get_relevant_context(request.query, request.k)
+        content = await file.read()
+        return document_processor.add_document(content, file.filename)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

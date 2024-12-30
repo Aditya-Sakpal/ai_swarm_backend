@@ -41,6 +41,7 @@ class AgentManager:
                 Agent : The created agent details.
         """
         agents = self.get_all_agents()
+        agents = [agent.model_dump() for agent in agents]
         agent.id = str(len(agents) + 1)
         
         if documents:
@@ -50,7 +51,7 @@ class AgentManager:
             agent.has_knowledge_base = True
             agent.document_count = len(documents)
         
-        agents.append(agent.dict())
+        agents.append(agent.model_dump())
         with open(self.storage_path, 'w') as f:
             json.dump(agents, f, indent=2)
         

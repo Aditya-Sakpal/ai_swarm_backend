@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from sse_starlette.sse import EventSourceResponse
-from ..models import ConversationInput
+from ..models import ConversationInput , GenerateDocumentInput
 from core import ConversationManager, AgentManager, DocumentGenerator
+import traceback
 
 router = APIRouter()
 agent_manager = AgentManager()
@@ -22,6 +23,19 @@ async def chat(agent_id: str, conversation: ConversationInput):
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
     
+    messages = []
+    for message in conversation.messages:
+        if message.agent_id != agent_id:
+            messages.append({
+                "role": "user",
+                "content": message.content
+            })
+        else:
+            messages.append({
+                "role": "assistant",
+                "content": message.content
+            })
+    
     conv_manager = ConversationManager(agent)
     async def event_generator():
         """
@@ -31,7 +45,7 @@ async def chat(agent_id: str, conversation: ConversationInput):
             Yields :
                 Dict : The response message.
         """
-        response = conv_manager.get_response(conversation.messages)
+        response = conv_manager.get_response(messages)
         for chunk in response:
             if chunk.choices[0].delta.content:
                 yield {
@@ -41,7 +55,7 @@ async def chat(agent_id: str, conversation: ConversationInput):
     return EventSourceResponse(event_generator())
 
 @router.post("/conversation/generate-document")
-async def generate_document(conversation: ConversationInput):
+async def generate_document(conversation: GenerateDocumentInput):
     """
         This api endpoint is used to generate a document from the conversation. 
         
@@ -52,9 +66,9 @@ async def generate_document(conversation: ConversationInput):
             bytes : The generated document.
     """
     try:
+        
         summary = DocumentGenerator.generate_summary(
-            conversation.messages, 
-            conversation.goal
+            conversation.messages
         )
         doc_io = DocumentGenerator.create_document(
             summary, 
@@ -63,4 +77,5 @@ async def generate_document(conversation: ConversationInput):
         )
         return doc_io
     except Exception as e:
+        print(traceback.format_exc())
         raise HTTPException(status_code=400, detail=str(e))

@@ -2,6 +2,7 @@ import openai
 from typing import List, Dict, Generator
 from .models import Agent
 from .document_processor import DocumentProcessor
+from redis_client import redis_client
 
 class ConversationManager:
     def __init__(self, agent: Agent):

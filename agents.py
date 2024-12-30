@@ -1,9 +1,8 @@
 import openai
 import streamlit as st
-import traceback
 from typing import List, Dict, Optional
 from document_processor import AgentDocumentProcessor
-from redis_client import redis_client
+import textwrap
 
 class ConversationAgent:
     def __init__(self, 
@@ -76,88 +75,74 @@ class ConversationAgent:
             return base_personality
         
         # Add context integration instructions
-        enhanced_message = (
-            f"{base_personality}\n\n"
-            "Additional Knowledge Base Context:\n"
-            "The following information from the agent's knowledge base may be relevant. "
-            "Incorporate this information naturally into your responses when appropriate:\n"
-            f"{context}"
-        )
+        enhanced_message = f"""{base_personality}
+
+            **Research Panel Member Instructions**
+            {
+                textwrap.indent(textwrap.dedent("""
+                You are a member of a research panel tasked with achieving a well-supported conclusion. 
+
+                **Responsibilities:**
+                    * **Present your viewpoint:** Clearly and concisely articulate your position, supported by evidence.
+                    * **Critically evaluate counterarguments:** Address opposing viewpoints constructively and objectively.
+                    * **Collaborate effectively:** Work towards consensus whenever possible, while respectfully articulating disagreements.
+
+                **Communication Guidelines:**
+                    * **Focus:** All contributions should be exceptionally concise, focused, and grounded in facts.
+                    * **Response Structure:**
+                        - **Position:** Briefly state your viewpoint.
+                        - **Evidence:** Present supporting facts or arguments.
+                        - **Counterarguments:** Address opposing viewpoints constructively.
+                        - **Summary:** Conclude with a concise summary of your stance.
+
+                **Knowledge Base Context:**
+                The following information from the agent's knowledge base may be relevant. 
+                Incorporate this information naturally when appropriate:
+                """), "    ")
+            }
+            {context}
+        """
         
         return enhanced_message
-
-    def store_message_in_cache(self, conversation_id: str, message: Dict[str, str]):
-        """
-        Store the message in the cache.
-        
-        Args:
-            conversation_id (str): The conversation id.
-            message (Dict[str, str]): The message.
-            
-        Returns:
-            None
-        """
-        redis_key = f"conversation:{conversation_id}:messages"
-        print(message)
-        redis_client.rpush(redis_key, message)
-        redis_client.ltrim(redis_key, -3, -1)
-        
-    def get_cached_messages(self, conversation_id: str) -> List[Dict[str, str]]:
-        """
-        Retrieve the last three messages from Redis for the given conversation ID.
-        """
-        redis_key = f"conversation:{conversation_id}:messages"
-        cached_messages = redis_client.lrange(redis_key, 0, -1)
-        print(cached_messages)
-        return [eval(msg) for msg in cached_messages] 
     
-    def get_response(self, messages: List[Dict[str, str]], conversation_id: str) -> Optional[openai.ChatCompletion]:
+    def get_response(self, messages: List[Dict[str, str]]) -> Optional[openai.ChatCompletion]:
         """
         Generate a response incorporating knowledge base context when relevant.
-
+        
         Args:
             messages (List[Dict[str, str]]): Conversation history
-            conversation_id (str): Unique conversation identifier
             
         Returns:
             Optional[openai.ChatCompletion]: Streamed response or None if error occurs
         """
         try:
-            # Store the last message in the Redis cache
-            if messages:
-                for message in messages:
-                    self.store_message_in_cache(conversation_id, message)
-
-            # Retrieve cached messages
-            cached_messages = self.get_cached_messages(conversation_id)
-
             # Get context for the last message if available
             context = ""
-            if cached_messages:
-                last_message = cached_messages[-1]["content"]
+            if messages:
+                last_message = messages[-1]["content"]
                 context = self.get_relevant_context(last_message)
-
+            
             # Enhance system message with context
             system_message = self.enhance_system_message(self.personality, context)
-
-            # Create messages with enhanced context
-            messages_with_context = [{"role": "system", "content": system_message}] + cached_messages
             
-            print(messages_with_context)
-
+            # Create messages with enhanced context
+            messages_with_context = [
+                {"role": "system", "content": system_message}
+            ] + messages
+            
             # Generate response
-            response = openai.ChatCompletion.create(
+            response = openai.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=messages_with_context,
-                temperature=0.9,
+                temperature=0.7,
                 max_tokens=800,
                 stream=True
             )
-
+            
             return response
-
+            
         except Exception as e:
-            print(f"Error generating response: {traceback.format_exc()}")
+            st.error(f"Error getting response: {str(e)}")
             return None
     
     def add_document_to_knowledge_base(self, document) -> tuple[bool, str]:

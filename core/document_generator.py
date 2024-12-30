@@ -104,4 +104,3 @@ class DocumentGenerator:
         doc.save(doc_io)
         doc_io.seek(0)
         return doc_io
-    

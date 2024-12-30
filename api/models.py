@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional
+from fastapi import UploadFile
 
 class AgentCreate(BaseModel):
     name: str
@@ -7,6 +8,10 @@ class AgentCreate(BaseModel):
     avatar: str
     expertise: List[str]
     personality: str
+    documents: Optional[List[UploadFile]] = None
+
+    class Config:
+        arbitrary_types_allowed = True
 
 class AgentUpdate(AgentCreate):
     pass
@@ -16,11 +21,19 @@ class AgentResponse(AgentCreate):
     has_knowledge_base: bool
     document_count: int
 
+class AgentsMessage(BaseModel):
+    agent_id: str
+    content: str
+
 class Message(BaseModel):
     role: str
     content: str
 
 class ConversationInput(BaseModel):
+    messages: List[AgentsMessage]
+    goal: str
+
+class GenerateDocumentInput(BaseModel):
     messages: List[Message]
     goal: str
 
@@ -31,17 +44,6 @@ class CreateDocumentRequest(BaseModel):
     summary: str
     goal: str
     messages: List[Message]
-
-class ProcessDocumentRequest(BaseModel):
-    content: bytes
-    filename: str
-
-class ExtractTextFromPDFRequest(BaseModel):
-    file_path: str
-
-class AddDocumentRequest(BaseModel):
-    content: bytes
-    filename: str
 
 class GetRelevantContextRequest(BaseModel):
     query: str

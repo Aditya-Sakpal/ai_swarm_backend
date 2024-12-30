@@ -1,14 +1,19 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from typing import List
-from api.models import AgentCreate, AgentUpdate, AgentResponse
+from api.models import  AgentUpdate, AgentResponse
 from core import AgentManager, Agent
+import traceback
 
 router = APIRouter()
 agent_manager = AgentManager()
 
 @router.post("/agents/", response_model=AgentResponse)
 async def create_agent(
-    agent: AgentCreate = Form(...),
+    name: str = Form(...),
+    role: str = Form(...),
+    avatar: str = Form(...),
+    expertise: List[str] = Form(...),
+    personality: str = Form(...),
     documents: List[UploadFile] = File(None)
 ):
     """
@@ -23,12 +28,20 @@ async def create_agent(
             AgentResponse : The created agent details.
     """
     try:
-        agent_obj = Agent(**agent.dict())
+        agent = {
+            "name": name,
+            "role": role,
+            "avatar": avatar,
+            "expertise": expertise,
+            "personality": personality,
+        }
+        agent_obj = Agent(**agent)
         doc_contents = []
         if documents:
             doc_contents = [await doc.read() for doc in documents]
         return agent_manager.create_agent(agent_obj, doc_contents)
     except Exception as e:
+        print(traceback.format_exc())
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/agents/", response_model=List[AgentResponse])
