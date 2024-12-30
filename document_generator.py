@@ -106,7 +106,7 @@ def create_formatted_docx(summary, goal, messages, agent1_name, agent2_name):
         return doc_io
 
     except Exception as e:
-        print(f"Error creating document: {str(e)}")
+        st.error(f"Error creating document: {str(e)}")
         return None
 
 def process_markdown_content(doc, content):
