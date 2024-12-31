@@ -18,6 +18,7 @@ chromadb
 
 # OpenAI Integration
 openai
+tiktoken
 
 # Utilities
 python-dotenv
