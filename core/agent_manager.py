@@ -46,8 +46,8 @@ class AgentManager:
         
         if documents:
             processor = DocumentProcessor(agent.id)
-            for doc in documents:
-                processor.add_document(doc)
+            for idx ,doc in enumerate(documents):
+                processor.add_document(content = doc , filename= f"{agent.id}_document_{idx}.txt")
             agent.has_knowledge_base = True
             agent.document_count = len(documents)
         

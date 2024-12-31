@@ -94,6 +94,6 @@ async def add_document(agent_id: str, file: UploadFile = File(...)):
         
         document_processor = DocumentProcessor(agent_id)
         content = await file.read()
-        return document_processor.add_document(content, file.filename)
+        return document_processor.add_document(content=content, filename= file.filename)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
