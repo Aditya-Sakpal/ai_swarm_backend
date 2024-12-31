@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 aiohappyeyeballs==2.4.4
 aiohttp==3.11.11
 aiosignal==1.3.2
@@ -148,3 +149,33 @@ wheel==0.45.1
 wrapt==1.17.0
 yarl==1.18.3
 zipp==3.21.0
+=======
+# API Dependencies
+fastapi
+python-multipart
+sse-starlette
+uvicorn
+pydantic
+pydantic-settings
+
+# Streamlit UI
+streamlit
+
+# Document Processing
+python-docx
+PyPDF2
+langchain
+langchain-community
+chromadb
+
+# OpenAI Integration
+openai
+
+# Utilities
+python-dotenv
+tqdm
+
+# File Handling
+typing-extensions
+redis
+>>>>>>> 14b3173524506bc9652c5be8cb278a6d8a81de7f
