@@ -1,10 +1,12 @@
 import os
 import json
 from typing import Dict, Any
+from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 import dotenv
 from chroma_config import get_chroma_client  # Add this import
 
@@ -19,19 +21,6 @@ class PersonalityBot:
         model_name: str = "gpt-3.5-turbo",
         temperature: float = 0.7
     ):
-        """
-            This constructor initializes the personality bot.
-            
-            Args :
-                openai_api_key (str) : The OpenAI API key.
-                personality_path (str) : The path to the personality file.
-                collection_name (str) : The name of the collection.
-                model_name (str) : The OpenAI model name.
-                temperature (float) : The temperature for the model.
-                
-            Returns :
-                None
-        """
         self.openai_api_key = openai_api_key
         self.personality = self._load_personality(personality_path)
         
@@ -77,15 +66,7 @@ class PersonalityBot:
         )
 
     def _load_personality(self, personality_path: str) -> Dict[str, Any]:
-        """
-            This method loads the personality from a file.
-            
-            Args :
-                personality_path (str) : The path to the personality file.
-                
-            Returns :
-                Dict[str, Any] : The personality details.
-        """
+        """Load personality from JSON file."""
         try:
             with open(personality_path, 'r') as file:
                 return json.load(file)
@@ -94,12 +75,7 @@ class PersonalityBot:
             return {"name": "Assistant", "bio": "", "skills": []}
 
     def _create_system_template(self) -> str:
-        """
-            This method creates the system template.    
-            
-            Returns :
-                str : The system template.
-        """
+        """Create system template using personality information."""
         return f"""You are {self.personality['name']}.
 
 Background:
@@ -117,16 +93,7 @@ When responding to questions:
 Remember to maintain a consistent personality throughout the conversation."""
 
     def _search_knowledge_base(self, query: str, n_results: int = 3):
-        """
-            This method searches the knowledge base.
-            
-            Args :
-                query (str) : The query.
-                n_results (int) : The number of results.
-                
-            Returns :
-                Dict : The search results.
-        """
+        """Search the pre-loaded knowledge base documents."""
         try:
             # Use pre-loaded documents instead of generating new embeddings
             if not hasattr(self, 'all_docs') or not self.all_docs['documents']:
@@ -146,7 +113,7 @@ Remember to maintain a consistent personality throughout the conversation."""
 
     def process_message(self, message: str) -> str:
         """
-            This method processes a message and returns the bot's response.
+        Process a message and return a response.
         
         Args:
             message (str): User's message
@@ -174,7 +141,7 @@ Remember to maintain a consistent personality throughout the conversation."""
     
     def process_message_stream(self, message: str):
         """
-        This function processes a message and yields chunks of the bot's response.
+        Process a message and yield response chunks for streaming.
         
         Args:
             message (str): User's message
