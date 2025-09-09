@@ -5,7 +5,7 @@ import re
 import streamlit as st
 import openai
 
-def generate_summary_doc(messages, goal):
+def generate_summary_doc(messages, goal):    
     """Generate a summary document from the conversation.
     
     Args:
